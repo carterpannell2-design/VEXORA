@@ -36,28 +36,28 @@ const GAMES = [
     title: '10 Minutes Till Dawn',
     category: 'Action',
     image: 'https://images.unsplash.com/photo-1552820728-8b83bb6b773f?auto=format&fit=crop&w=800&q=80',
-    url: '/games/10-minutes-till-dawn.html'
+    url: './games/10-minutes-till-dawn.html'
   },
   {
     id: 'battlefield',
     title: 'Battlefield',
     category: 'Shooter',
     image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=2070',
-    url: '/games/battlefield.html'
+    url: './games/battlefield.html'
   },
   {
     id: 'minecraft',
     title: 'Minecraft',
     category: 'Sandbox',
     image: 'https://images.unsplash.com/photo-1607513746994-51f730a44832?auto=format&fit=crop&w=800&q=80',
-    url: '/games/minecraft.html'
+    url: './games/minecraft.html'
   },
   {
     id: 'ultrakill',
     title: 'ULTRAKILL',
     category: 'Shooter',
     image: 'https://images.unsplash.com/photo-1552820728-8b83bb6b773f?auto=format&fit=crop&w=800&q=80',
-    url: '/games/ultrakill.html'
+    url: './games/ultrakill.html'
   }
 ];
 
@@ -187,11 +187,15 @@ export default function App() {
   const [selectedGame, setSelectedGame] = useState<typeof GAMES[0] | null>(null);
 
   const [settings, setSettings] = useState<SettingsState>(() => {
-    const saved = typeof window !== 'undefined' ? localStorage.getItem('vexora-settings') : null;
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (parsed.adBlocker === undefined) parsed.adBlocker = true;
-      return parsed;
+    try {
+      const saved = typeof window !== 'undefined' ? localStorage.getItem('vexora-settings') : null;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.adBlocker === undefined) parsed.adBlocker = true;
+        return parsed;
+      }
+    } catch (e) {
+      console.error('Failed to parse settings', e);
     }
     return {
       theme: 'nebula',
