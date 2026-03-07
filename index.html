@@ -21,6 +21,9 @@
           justify-content: center;
           height: 100vh;
           width: 100vw;
+          text-align: center;
+          padding: 20px;
+          box-sizing: border-box;
         }
         .intro-title {
           font-size: 3rem;
@@ -40,6 +43,17 @@
           border-top-color: #6366f1;
           animation: spin 1s ease-in-out infinite;
         }
+        .error-message {
+          margin-top: 2rem;
+          color: #f87171;
+          font-size: 0.875rem;
+          max-width: 400px;
+          display: none;
+          background: rgba(248, 113, 113, 0.1);
+          padding: 1rem;
+          border-radius: 0.5rem;
+          border: 1px solid rgba(248, 113, 113, 0.2);
+        }
         @keyframes spin {
           to { transform: rotate(360deg); }
         }
@@ -51,7 +65,29 @@
       <div class="intro-container">
         <div class="intro-title">VEXORA</div>
         <div class="intro-spinner"></div>
+        <div id="error-display" class="error-message"></div>
       </div>
+      <script>
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+          const display = document.getElementById('error-display');
+          if (display) {
+            display.style.display = 'block';
+            display.innerText = 'Error: ' + msg + (lineNo ? '\nLine: ' + lineNo : '') + '\nCheck console for details.';
+          }
+          return false;
+        };
+        setTimeout(() => {
+          const root = document.getElementById('root');
+          // If the intro-container is still there, it means React hasn't mounted
+          if (root && root.querySelector('.intro-container')) {
+            const display = document.getElementById('error-display');
+            if (display && display.style.display !== 'block') {
+              display.style.display = 'block';
+              display.innerText = 'Loading is taking longer than expected. This might be due to a slow connection or a script error. Check the browser console (F12) for more information.';
+            }
+          }
+        }, 8000);
+      </script>
     </div>
     <script type="module" src="./src/main.tsx"></script>
   </body>

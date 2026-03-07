@@ -131,32 +131,18 @@ function enable() {
   if (!originalXHR) {
     originalXHR = window.XMLHttpRequest;
     try {
+      const open = XMLHttpRequest.prototype.open;
       // @ts-ignore
-      const interceptedXHR = function() {
-        const xhr = new originalXHR!();
-        const open = xhr.open;
-        // @ts-ignore
-        xhr.open = function(method, url) {
-          if (shouldBlock(url)) {
-            console.warn(`[Vexora AdBlocker] Blocked XHR: ${url}`);
-            // Mocking a successful but empty response
-            Object.defineProperty(this, 'status', { value: 204 });
-            Object.defineProperty(this, 'readyState', { value: 4 });
-            return;
-          }
-          return open.apply(this, arguments as any);
-        };
-        return xhr;
+      XMLHttpRequest.prototype.open = function(method: string, url: string) {
+        if (shouldBlock(url)) {
+          console.warn(`[Vexora AdBlocker] Blocked XHR: ${url}`);
+          // We still call the original open but with a dummy URL or just skip it
+          // Actually, skipping it might cause send() to throw.
+          // Better to redirect to a non-existent local URL that returns nothing.
+          return open.apply(this, [method, 'data:text/plain,blocked'] as any);
+        }
+        return open.apply(this, arguments as any);
       };
-      
-      interceptedXHR.prototype = originalXHR.prototype;
-
-      Object.defineProperty(window, 'XMLHttpRequest', {
-        value: interceptedXHR,
-        configurable: true,
-        writable: true,
-        enumerable: true
-      });
     } catch (e) {
       console.error('[Vexora AdBlocker] Failed to intercept XHR:', e);
     }
@@ -224,15 +210,9 @@ function disable() {
   // Restore XHR
   if (originalXHR) {
     try {
-      Object.defineProperty(window, 'XMLHttpRequest', {
-        value: originalXHR,
-        configurable: true,
-        writable: true,
-        enumerable: true
-      });
+      XMLHttpRequest.prototype.open = originalXHR.prototype.open;
     } catch (e) {
-      // @ts-ignore
-      window.XMLHttpRequest = originalXHR;
+      console.error('[Vexora AdBlocker] Failed to restore XHR:', e);
     }
     originalXHR = null;
   }
