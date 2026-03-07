@@ -41,28 +41,28 @@ const GAMES: Game[] = [
   {
     id: 'slope',
     title: 'Slope',
-    url: '/games/slope.html',
+    url: './games/slope.html',
     thumbnail: 'https://images.crazygames.com/slope/20240212091102/slope-cover?auto=format%2Ccompress&q=45&cs=strip&ch=DPR&w=1200&h=630&fit=crop',
     category: 'Action'
   },
   {
     id: 'battlefield',
     title: 'Battlefield',
-    url: '/games/battlefield.html',
+    url: './games/battlefield.html',
     thumbnail: 'https://picsum.photos/seed/battlefield/300/200',
     category: 'Action'
   },
   {
     id: 'carcrashtest',
     title: 'Car Crash Test',
-    url: '/games/carcrashtest.html',
+    url: './games/carcrashtest.html',
     thumbnail: 'https://picsum.photos/seed/carcrash/300/200',
     category: 'Simulation'
   },
   {
     id: 'ultrakill',
     title: 'Ultrakill',
-    url: '/games/ultrakill.html',
+    url: './games/ultrakill.html',
     thumbnail: 'https://picsum.photos/seed/ultrakill/300/200',
     category: 'Action'
   }
