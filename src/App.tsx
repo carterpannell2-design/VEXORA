@@ -1,32 +1,23 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  Gamepad2, 
   Settings, 
   Home, 
-  Search, 
-  X, 
-  Maximize2, 
-  RefreshCw, 
-  ExternalLink,
   Palette,
   Shield,
   Type,
-  Layout,
-  ChevronRight,
-  Monitor
+  Gamepad2,
+  Search,
+  X,
+  Maximize2,
+  RefreshCw,
+  ExternalLink
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 // --- Types ---
 type Theme = 'nebula' | 'midnight' | 'emerald' | 'sunset' | 'brutalist';
 
-interface Game {
-  id: string;
-  title: string;
-  url: string;
-  thumbnail: string;
-  category: string;
-}
+import { initAdBlocker, updateAdBlocker } from './services/adBlocker';
 
 interface SettingsState {
   theme: Theme;
@@ -34,37 +25,39 @@ interface SettingsState {
   tabIcon: string;
   antiClose: boolean;
   aboutBlank: boolean;
+  adBlocker: boolean;
 }
 
 // --- Constants ---
-const GAMES: Game[] = [
+
+const GAMES = [
   {
-    id: 'slope',
-    title: 'Slope',
-    url: './games/slope.html',
-    thumbnail: 'https://images.crazygames.com/slope/20240212091102/slope-cover?auto=format%2Ccompress&q=45&cs=strip&ch=DPR&w=1200&h=630&fit=crop',
-    category: 'Action'
+    id: '10-minutes-till-dawn',
+    title: '10 Minutes Till Dawn',
+    category: 'Action',
+    image: 'https://images.unsplash.com/photo-1552820728-8b83bb6b773f?auto=format&fit=crop&w=800&q=80',
+    url: '/games/10-minutes-till-dawn.html'
   },
   {
     id: 'battlefield',
     title: 'Battlefield',
-    url: './games/battlefield.html',
-    thumbnail: 'https://picsum.photos/seed/battlefield/300/200',
-    category: 'Action'
+    category: 'Shooter',
+    image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=2070',
+    url: '/games/battlefield.html'
   },
   {
-    id: 'carcrashtest',
-    title: 'Car Crash Test',
-    url: './games/carcrashtest.html',
-    thumbnail: 'https://picsum.photos/seed/carcrash/300/200',
-    category: 'Simulation'
+    id: 'minecraft',
+    title: 'Minecraft',
+    category: 'Sandbox',
+    image: 'https://images.unsplash.com/photo-1607513746994-51f730a44832?auto=format&fit=crop&w=800&q=80',
+    url: '/games/minecraft.html'
   },
   {
     id: 'ultrakill',
-    title: 'Ultrakill',
-    url: './games/ultrakill.html',
-    thumbnail: 'https://picsum.photos/seed/ultrakill/300/200',
-    category: 'Action'
+    title: 'ULTRAKILL',
+    category: 'Shooter',
+    image: 'https://images.unsplash.com/photo-1552820728-8b83bb6b773f?auto=format&fit=crop&w=800&q=80',
+    url: '/games/ultrakill.html'
   }
 ];
 
@@ -190,18 +183,35 @@ const Clock: React.FC = () => {
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'home' | 'games' | 'settings'>('home');
-  const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedGame, setSelectedGame] = useState<typeof GAMES[0] | null>(null);
+
   const [settings, setSettings] = useState<SettingsState>(() => {
     const saved = typeof window !== 'undefined' ? localStorage.getItem('vexora-settings') : null;
-    return saved ? JSON.parse(saved) : {
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed.adBlocker === undefined) parsed.adBlocker = true;
+      return parsed;
+    }
+    return {
       theme: 'nebula',
-      tabName: 'Vexora Games',
+      tabName: 'Vexora',
       tabIcon: 'https://www.google.com/favicon.ico',
       antiClose: false,
-      aboutBlank: false
+      aboutBlank: false,
+      adBlocker: true
     };
   });
+
+  // Initialize AdBlocker
+  useEffect(() => {
+    initAdBlocker(settings.adBlocker);
+  }, []);
+
+  // Update AdBlocker when setting changes
+  useEffect(() => {
+    updateAdBlocker(settings.adBlocker);
+  }, [settings.adBlocker]);
 
   // Persist settings
   useEffect(() => {
@@ -341,13 +351,22 @@ export default function App() {
                 <motion.button
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ delay: 0.8 }}
+                  transition={{ delay: 0.6 }}
                   onClick={() => setActiveTab('games')}
-                  className="mt-16 px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl transition-all group flex items-center gap-3 text-zinc-400 hover:text-white"
+                  className="mt-12 px-8 py-4 bg-white/10 hover:bg-white/20 text-white rounded-full font-medium tracking-wide transition-all border border-white/10 hover:border-white/30 flex items-center gap-3"
                 >
-                  <Gamepad2 size={20} className="group-hover:rotate-12 transition-transform" />
-                  <span>Enter Library</span>
+                  <Gamepad2 size={20} />
+                  Enter Library
                 </motion.button>
+
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.8 }}
+                  className="mt-16 text-zinc-500 text-sm uppercase tracking-[0.2em]"
+                >
+                  Pure Minimalist Experience
+                </motion.div>
               </motion.div>
             )}
 
@@ -357,34 +376,45 @@ export default function App() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="p-8 md:p-12 max-w-7xl mx-auto"
+                className="p-8 md:p-12"
               >
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
-                  <div>
-                    <h1 className="text-4xl font-bold mb-2">Library</h1>
-                    <p className="text-zinc-400">Browse our collection of {GAMES.length} games</p>
-                  </div>
-                  <div className="relative group">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-indigo-400 transition-colors" size={20} />
-                    <input 
-                      type="text" 
-                      placeholder="Search games..." 
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="bg-white/5 border border-white/10 rounded-2xl py-3 pl-12 pr-6 w-full md:w-80 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {filteredGames.map(game => (
-                    <GameCard key={game.id} game={game} onClick={() => setSelectedGame(game)} />
-                  ))}
-                  {filteredGames.length === 0 && (
-                    <div className="col-span-full py-20 text-center">
-                      <p className="text-zinc-500 text-lg">No games found matching your search.</p>
+                <div className="max-w-6xl mx-auto">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
+                    <div>
+                      <h1 className="text-4xl font-bold mb-2">Library</h1>
+                      <p className="text-zinc-400">Your personal collection</p>
                     </div>
-                  )}
+                    <div className="relative w-full md:w-96">
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={20} />
+                      <input
+                        type="text"
+                        placeholder="Search games..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {filteredGames.map((game, i) => (
+                      <motion.div
+                        key={game.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.05 }}
+                        onClick={() => setSelectedGame(game)}
+                        className="group relative aspect-[4/3] rounded-3xl overflow-hidden cursor-pointer bg-white/5 border border-white/10 hover:border-indigo-500/50 transition-all"
+                      >
+                        <img src={game.image} alt={game.title} className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500" referrerPolicy="no-referrer" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                        <div className="absolute bottom-0 left-0 p-6">
+                          <div className="text-xs font-bold tracking-wider text-indigo-400 mb-2 uppercase">{game.category}</div>
+                          <h3 className="text-xl font-bold text-white group-hover:text-indigo-300 transition-colors">{game.title}</h3>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
                 </div>
               </motion.div>
             )}
@@ -473,11 +503,17 @@ export default function App() {
                         enabled={settings.antiClose}
                         onToggle={() => setSettings(s => ({ ...s, antiClose: !s.antiClose }))}
                       />
-                      <Toggle 
+                       <Toggle 
                         label="Auto about:blank" 
                         description="Automatically attempts to open the site in a blank window on startup (Experimental)."
                         enabled={settings.aboutBlank}
                         onToggle={() => setSettings(s => ({ ...s, aboutBlank: !s.aboutBlank }))}
+                      />
+                      <Toggle 
+                        label="Vexora AdBlocker" 
+                        description="Blocks intrusive ads and trackers in games and across the web."
+                        enabled={settings.adBlocker}
+                        onToggle={() => setSettings(s => ({ ...s, adBlocker: !s.adBlocker }))}
                       />
                     </div>
                   </section>
@@ -488,65 +524,75 @@ export default function App() {
         </main>
       </div>
 
-      {/* Game Player Overlay */}
       <AnimatePresence>
         {selectedGame && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/95 backdrop-blur-xl flex flex-col"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 md:p-8"
           >
-            <div className="h-16 border-b border-white/10 flex items-center justify-between px-6">
-              <div className="flex items-center gap-4">
-                <button 
-                  onClick={() => setSelectedGame(null)}
-                  className="p-2 hover:bg-white/10 rounded-xl transition-colors"
-                >
-                  <X size={24} />
-                </button>
-                <h2 className="font-bold text-lg">{selectedGame.title}</h2>
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="w-full max-w-6xl h-[80vh] bg-zinc-900 rounded-3xl overflow-hidden shadow-2xl border border-white/10 flex flex-col"
+            >
+              <div className="flex items-center justify-between p-4 bg-zinc-950 border-b border-white/5">
+                <div className="flex items-center gap-4">
+                  <h3 className="font-bold text-lg">{selectedGame.title}</h3>
+                  <span className="px-2 py-1 bg-white/10 rounded text-xs font-medium text-zinc-400">
+                    {selectedGame.category}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      const iframe = document.getElementById('game-frame') as HTMLIFrameElement;
+                      if (iframe) iframe.src = iframe.src;
+                    }}
+                    className="p-2 text-zinc-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                    title="Reload Game"
+                  >
+                    <RefreshCw size={20} />
+                  </button>
+                  <button
+                    onClick={() => window.open(selectedGame.url, '_blank')}
+                    className="p-2 text-zinc-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                    title="Open in New Tab"
+                  >
+                    <ExternalLink size={20} />
+                  </button>
+                  <button
+                    onClick={() => {
+                      const iframe = document.getElementById('game-frame');
+                      if (iframe) {
+                        if (iframe.requestFullscreen) iframe.requestFullscreen();
+                      }
+                    }}
+                    className="p-2 text-zinc-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                    title="Fullscreen"
+                  >
+                    <Maximize2 size={20} />
+                  </button>
+                  <div className="w-px h-6 bg-white/10 mx-2" />
+                  <button
+                    onClick={() => setSelectedGame(null)}
+                    className="p-2 text-rose-400 hover:text-rose-300 hover:bg-rose-400/10 rounded-lg transition-colors"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <button 
-                  onClick={() => {
-                    const iframe = document.getElementById('game-frame') as HTMLIFrameElement;
-                    if (iframe) iframe.src = iframe.src;
-                  }}
-                  className="p-2 hover:bg-white/10 rounded-xl transition-colors text-zinc-400"
-                  title="Reload"
-                >
-                  <RefreshCw size={20} />
-                </button>
-                <button 
-                  onClick={() => {
-                    const iframe = document.getElementById('game-frame') as HTMLIFrameElement;
-                    if (iframe) iframe.requestFullscreen();
-                  }}
-                  className="p-2 hover:bg-white/10 rounded-xl transition-colors text-zinc-400"
-                  title="Fullscreen"
-                >
-                  <Maximize2 size={20} />
-                </button>
-                <a 
-                  href={selectedGame.url} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="p-2 hover:bg-white/10 rounded-xl transition-colors text-zinc-400"
-                  title="Open in new tab"
-                >
-                  <ExternalLink size={20} />
-                </a>
+              <div className="flex-1 relative bg-black">
+                <iframe
+                  id="game-frame"
+                  src={selectedGame.url}
+                  className="absolute inset-0 w-full h-full border-none"
+                  allow="fullscreen; autoplay; gamepad; clipboard-read; clipboard-write"
+                />
               </div>
-            </div>
-            <div className="flex-1 bg-black relative">
-              <iframe 
-                id="game-frame"
-                src={selectedGame.url} 
-                className="w-full h-full border-none"
-                allow="fullscreen; autoplay; cursor-lock; accelerometer; gyroscope; magnetometer"
-              />
-            </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -591,38 +637,6 @@ const NavButton: React.FC<{ active: boolean; onClick: () => void; icon: React.Re
         />
       )}
     </button>
-  );
-}
-
-const GameCard: React.FC<{ game: Game; onClick: () => void }> = ({ game, onClick }) => {
-  return (
-    <motion.button
-      whileHover={{ y: -5 }}
-      onClick={onClick}
-      className="group relative bg-white/5 border border-white/5 rounded-3xl overflow-hidden text-left transition-all hover:border-white/20 hover:bg-white/10"
-    >
-      <div className="aspect-video overflow-hidden">
-        <img 
-          src={game.thumbnail} 
-          alt={game.title}
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-          referrerPolicy="no-referrer"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
-          <span className="text-sm font-medium flex items-center gap-1">
-            Play Now <ChevronRight size={14} />
-          </span>
-        </div>
-      </div>
-      <div className="p-5">
-        <div className="flex items-center justify-between mb-1">
-          <h3 className="font-bold text-lg group-hover:text-indigo-400 transition-colors">{game.title}</h3>
-          <span className="text-[10px] uppercase tracking-widest font-bold text-zinc-500 bg-white/5 px-2 py-1 rounded-md">
-            {game.category}
-          </span>
-        </div>
-      </div>
-    </motion.button>
   );
 }
 

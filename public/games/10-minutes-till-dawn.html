@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>10 Minutes Till Dawn | Seraph</title>
+  <base href="https://cdn.jsdelivr.net/gh/bubbls/UGS-Assets@main/10minutestilldawn/">
+  <script src="Build/UnityLoader.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;800&display=swap');
+    
+    html, body {
+      background: #000;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      padding: 0;
+      margin: 0;
+    }
+    div#gameContainer {
+      background: transparent !important;
+      position: absolute;
+      width: 100vw;
+      height: 100vh;
+    }
+    div#gameContainer canvas {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+    }
+    div#gameContainer[data-pixelated="true"] canvas {
+      image-rendering: optimizeSpeed;
+      image-rendering: -webkit-crisp-edges;
+      image-rendering: -moz-crisp-edges;
+      image-rendering: -o-crisp-edges;
+      image-rendering: crisp-edges;
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: optimize-contrast;
+      image-rendering: pixelated;
+      -ms-interpolation-mode: nearest-neighbor;
+    }
+
+    /* Modern Loading Screen */
+    #loading-screen {
+      position: absolute;
+      inset: 0;
+      background: #09090b; /* zinc-950 */
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      font-family: 'Inter', system-ui, sans-serif;
+      color: white;
+      transition: opacity 0.5s ease, visibility 0.5s ease;
+    }
+    
+    .loader-container {
+      width: 320px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .game-title {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      background: linear-gradient(to bottom, #ffffff, #a1a1aa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin: 0;
+      text-align: center;
+    }
+
+    .progress-wrapper {
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 9999px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .progress-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 0%;
+      background: #6366f1; /* indigo-500 */
+      border-radius: 9999px;
+      transition: width 0.3s ease;
+      box-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
+    }
+
+    .loading-text {
+      font-size: 12px;
+      color: #a1a1aa; /* zinc-400 */
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 3px solid rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      border-top-color: #6366f1;
+      animation: spin 1s ease-in-out infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div id="gameContainer" data-pixelated="true"></div>
+  
+  <div id="loading-screen">
+    <div class="loader-container">
+      <div class="spinner"></div>
+      <h1 class="game-title">10 Minutes Till Dawn</h1>
+      <div class="progress-wrapper">
+        <div id="progress-bar" class="progress-bar"></div>
+      </div>
+      <div id="loading-text" class="loading-text">INITIALIZING...</div>
+    </div>
+  </div>
+  <script>
+    function mergeFiles(fileParts) {
+      return new Promise((resolve, reject) => {
+        let buffers = [];
+        function fetchPart(i) {
+          if (i >= fileParts.length) {
+            let mergedBlob = new Blob(buffers);
+            resolve(mergedBlob);
+            return;
+          }
+          fetch(fileParts[i])
+            .then(r => r.arrayBuffer())
+            .then(data => {
+              buffers.push(data);
+              fetchPart(i + 1);
+            })
+            .catch(reject);
+        }
+        fetchPart(0);
+      });
+    }
+
+    function getParts(file, start, end) {
+      let arr = [];
+      for (let i = start; i <= end; i++) {
+        arr.push(file + ".part" + i);
+      }
+      return arr;
+    }
+
+    function resizeUnityContainer() {
+      var container = document.getElementById("gameContainer");
+      if (container) {
+        container.style.width = window.innerWidth + "px";
+        container.style.height = window.innerHeight + "px";
+      }
+    }
+
+    window.addEventListener('resize', resizeUnityContainer);
+
+    function UnityProgress(gameInstance, progress) {
+      try {
+        if (progress === 'complete') {
+          return;
+        }
+        var pct = 0;
+        if (typeof progress === 'number') pct = progress;
+        else if (progress && progress.total && progress.loaded) pct = progress.loaded / progress.total;
+        
+        var txt = document.getElementById('loading-text');
+        var bar = document.getElementById('progress-bar');
+        
+        var percent = Math.round(pct * 100);
+        if (txt) txt.textContent = 'LOADING ASSETS... ' + percent + '%';
+        if (bar) bar.style.width = percent + '%';
+      } catch (e) {
+        console.error('Progress error:', e);
+      }
+    }
+
+    window.addEventListener("load", function () {
+      window.unityMergedFiles = {};
+
+      Promise.all([
+        mergeFiles(getParts("Build/10MinutesTillDawnWebGL.data.unityweb", 1, 2)),
+        mergeFiles(getParts("Build/10MinutesTillDawnWebGL.wasm.code.unityweb", 1, 2)),
+        mergeFiles(getParts("Build/10MinutesTillDawnWebGL.wasm.framework.unityweb", 1, 1))
+      ]).then(([dataBlob, wasmCodeBlob, wasmFrameworkBlob]) => {
+        window.unityMergedFiles['Build/10MinutesTillDawnWebGL.data.unityweb'] = URL.createObjectURL(dataBlob);
+        window.unityMergedFiles['Build/10MinutesTillDawnWebGL.wasm.code.unityweb'] = URL.createObjectURL(wasmCodeBlob);
+        window.unityMergedFiles['Build/10MinutesTillDawnWebGL.wasm.framework.unityweb'] = URL.createObjectURL(wasmFrameworkBlob);
+
+        console.log("Merged files ready:", Object.keys(window.unityMergedFiles));
+
+        function findMergedKey(requestUrl) {
+          try {
+            if (typeof requestUrl !== 'string') return null;
+            if (window.unityMergedFiles[requestUrl]) return requestUrl;
+            var resolved = new URL(requestUrl, window.location.href).pathname.replace(/^[\\/]+/, '');
+            if (window.unityMergedFiles[resolved]) return resolved;
+            var withBuild = 'Build/' + resolved.split('/').pop();
+            if (window.unityMergedFiles[withBuild]) return withBuild;
+          } catch (e) {
+          }
+          return null;
+        }
+
+        const originalFetch = window.fetch.bind(window);
+        window.fetch = function(input, init) {
+          let url = typeof input === 'string' ? input : input.url;
+          const key = findMergedKey(url);
+          if (key) {
+            console.log("Redirecting fetch to merged file:", key, "->", window.unityMergedFiles[key]);
+            if (typeof input === 'string') {
+              return originalFetch(window.unityMergedFiles[key], init);
+            } else {
+              return originalFetch(new Request(window.unityMergedFiles[key], input), init);
+            }
+          }
+          return originalFetch(input, init);
+        };
+
+        const OriginalXHR = window.XMLHttpRequest;
+        window.XMLHttpRequest = function() {
+          const xhr = new OriginalXHR();
+          const originalOpen = xhr.open;
+          xhr.open = function(method, url, ...args) {
+            try {
+              let urlStr = typeof url === 'string' ? url : url.toString();
+              const key = findMergedKey(urlStr);
+              if (key) {
+                console.log("Redirecting XHR to merged file:", key);
+                return originalOpen.call(this, method, window.unityMergedFiles[key], ...args);
+              }
+            } catch (e) {
+            }
+            return originalOpen.call(this, method, url, ...args);
+          };
+          return xhr;
+        };
+
+        window.gameInstance = UnityLoader.instantiate("gameContainer", "Build/10MinutesTillDawnWebGL.json", {
+          onProgress: UnityProgress,
+          Module: {
+            onRuntimeInitialized: function () {
+              resizeUnityContainer();
+              let loadingScreen = document.querySelector("#loading-screen");
+              if (loadingScreen) {
+                loadingScreen.style.opacity = '0';
+                loadingScreen.style.visibility = 'hidden';
+                setTimeout(() => loadingScreen.remove(), 500);
+              }
+              UnityProgress(window.gameInstance, 'complete');
+            }
+          }
+        });
+      })
+      .catch(err => {
+        console.error("Unity load failed:", err);
+        let txt = document.getElementById('loading-text');
+        if (txt) txt.textContent = 'LOADING FAILED: ' + (err && err.message ? err.message : err).toUpperCase();
+        let bar = document.getElementById('progress-bar');
+        if (bar) {
+          bar.style.backgroundColor = '#ef4444'; // red-500
+          bar.style.width = '100%';
+        }
+        let spinner = document.querySelector('.spinner');
+        if (spinner) spinner.style.animation = 'none';
+      });
+    });
+  </script>
+</body>
+</html>
