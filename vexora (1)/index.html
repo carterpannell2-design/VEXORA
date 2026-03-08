@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Google AI Studio App</title>
+  </head>
+  <body>
+    <div id="root">
+      <style>
+        body {
+          background-color: #05050a;
+          margin: 0;
+          color: white;
+          font-family: system-ui, -apple-system, sans-serif;
+        }
+        .intro-container {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          height: 100vh;
+          width: 100vw;
+          text-align: center;
+          padding: 20px;
+          box-sizing: border-box;
+        }
+        .intro-title {
+          font-size: 3rem;
+          font-weight: 900;
+          letter-spacing: -0.05em;
+          background: linear-gradient(to bottom, #ffffff, #a1a1aa);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        .intro-spinner {
+          margin-top: 2rem;
+          width: 40px;
+          height: 40px;
+          border: 3px solid rgba(255, 255, 255, 0.1);
+          border-radius: 50%;
+          border-top-color: #6366f1;
+          animation: spin 1s ease-in-out infinite;
+        }
+        .error-message {
+          margin-top: 2rem;
+          color: #f87171;
+          font-size: 0.875rem;
+          max-width: 400px;
+          display: none;
+          background: rgba(248, 113, 113, 0.1);
+          padding: 1rem;
+          border-radius: 0.5rem;
+          border: 1px solid rgba(248, 113, 113, 0.2);
+        }
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+      </style>
+      <div class="intro-container">
+        <div class="intro-title">VEXORA</div>
+        <div class="intro-spinner"></div>
+        <div id="error-display" class="error-message"></div>
+      </div>
+      <script>
+        console.log('Vexora Bootloader: Initializing...');
+        const startTime = Date.now();
+        
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+          console.error('Vexora Runtime Error:', {msg, url, lineNo, columnNo, error});
+          const display = document.getElementById('error-display');
+          if (display) {
+            display.style.display = 'block';
+            display.innerHTML = `
+              <div style="color: #f87171; font-weight: bold; margin-bottom: 8px;">CRITICAL RUNTIME ERROR</div>
+              <div style="font-family: monospace; font-size: 12px; text-align: left; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 4px;">
+                ${msg}<br>
+                Line: ${lineNo}:${columnNo}<br>
+                Source: ${url ? url.split('/').pop() : 'unknown'}
+              </div>
+              <div style="margin-top: 12px; font-size: 12px; color: #a1a1aa;">Please check the browser console (F12) for a full stack trace.</div>
+            `;
+          }
+          return false;
+        };
+        
+        window.addEventListener('error', function(e) {
+          if (e.target && (e.target.tagName === 'SCRIPT' || e.target.tagName === 'LINK')) {
+            console.error('Vexora Asset Load Error:', e.target.src || e.target.href);
+            const display = document.getElementById('error-display');
+            if (display) {
+              display.style.display = 'block';
+              display.innerHTML = `
+                <div style="color: #fbbf24; font-weight: bold; margin-bottom: 8px;">ASSET LOAD FAILURE</div>
+                <div style="font-size: 13px;">Failed to load: <span style="font-family: monospace; color: #fbbf24;">${(e.target.src || e.target.href).split('/').pop()}</span></div>
+                <div style="margin-top: 12px; font-size: 12px; color: #a1a1aa; text-align: left;">
+                  <strong>Possible Fixes:</strong><br>
+                  1. Check if the file exists in your deployment<br>
+                  2. Ensure your base path is correct (GitHub Pages often needs a subfolder path)<br>
+                  3. Clear your browser cache and refresh
+                </div>
+              `;
+            }
+          }
+        }, true);
+
+        const checkInterval = setInterval(() => {
+          const root = document.getElementById('root');
+          const intro = document.querySelector('.intro-container');
+          const elapsed = (Date.now() - startTime) / 1000;
+
+          // Check for source deployment on static host
+          if (window.location.protocol !== 'file:' && !window.location.hostname.includes('localhost')) {
+            const scripts = Array.from(document.getElementsByTagName('script'));
+            const isSourceDeployment = scripts.some(s => s.src.endsWith('.tsx'));
+            if (isSourceDeployment) {
+              const display = document.getElementById('error-display');
+              if (display) {
+                display.style.display = 'block';
+                display.innerHTML = `
+                  <div style="color: #f87171; font-weight: bold; margin-bottom: 8px;">SOURCE DEPLOYMENT DETECTED</div>
+                  <div style="font-size: 13px;">You are hosting the <strong>source code</strong> directly. Browsers cannot run <span style="font-family: monospace; color: #f87171;">.tsx</span> files.</div>
+                  <div style="margin-top: 12px; font-size: 12px; color: #a1a1aa; text-align: left;">
+                    <strong>The Fix:</strong><br>
+                    1. Run <span style="font-family: monospace; background: #1f2937; padding: 2px 4px; border-radius: 4px;">npm run build</span> locally<br>
+                    2. Deploy the contents of the <span style="font-family: monospace; color: #6366f1;">dist</span> folder, NOT the whole project.<br>
+                    3. Or use a GitHub Action for automatic deployment.
+                  </div>
+                `;
+                clearInterval(checkInterval);
+                return;
+              }
+            }
+          }
+
+          // If React has mounted, it will replace the content of #root
+          // or at least remove the intro-container if we coded it that way
+          if (!intro || getComputedStyle(intro).display === 'none' || !root.contains(intro)) {
+            console.log(`Vexora: React mounted successfully in ${elapsed.toFixed(2)}s`);
+            clearInterval(checkInterval);
+            return;
+          }
+
+          if (elapsed > 7) {
+            console.warn('Vexora: Loading timeout reached.');
+            const display = document.getElementById('error-display');
+            if (display && display.style.display !== 'block') {
+              display.style.display = 'block';
+              display.innerHTML = `
+                <div style="color: #6366f1; font-weight: bold; margin-bottom: 8px;">STUCK ON LOADING?</div>
+                <div style="font-size: 13px;">The app is taking longer than expected to start.</div>
+                <div style="margin-top: 12px; font-size: 12px; color: #a1a1aa; text-align: left;">
+                  <strong>Troubleshooting:</strong><br>
+                  • Open Console (F12) to see hidden errors<br>
+                  • Ensure you are on a modern browser<br>
+                  • Check your internet connection
+                </div>
+                <button onclick="window.location.reload()" style="margin-top: 15px; background: #6366f1; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600;">Refresh Page</button>
+              `;
+            }
+            clearInterval(checkInterval);
+          }
+        }, 1000);
+      </script>
+    </div>
+    <script type="module" src="./src/main.tsx"></script>
+  </body>
+</html>
+
